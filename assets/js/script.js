@@ -114,6 +114,7 @@ var createRecentCityElement = () => {
 
 var getSearchHistory = function() {
     var history = localStorage.getItem("cityNames");
+    // console.log(typeof history);
     
     if (!history) {
         searchHistory.push(cCityEl.value);
@@ -121,8 +122,15 @@ var getSearchHistory = function() {
     } else {
         searchHistory = [history];
         // console.log(searchHistory);
-        searchHistory.push(cCityEl.value);
-        localStorage.setItem("cityNames", searchHistory);
+        const found = searchHistory.find(element => element == cCityEl.value);
+            if (!found === cCityEl.value) {
+                searchHistory.push(cCityEl.value);
+                localStorage.setItem("cityNames", searchHistory);
+            } else {
+                return;
+            }
+                
+
     }
 }
 
