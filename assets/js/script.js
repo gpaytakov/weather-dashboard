@@ -4,6 +4,18 @@ var recentCityBtn = document.querySelector('.recent-city')
 var recentCities = document.querySelector('.recent-cities');
 var searchHistory = [];
 
+var onRefresh = () => {
+    var cityName = localStorage.getItem('latestCity');
+    var cityNames = localStorage.getItem('cityNames');
+
+    if (!cityName || !cityNames) {
+        return;
+    }
+    searchHistory = cityNames.split(',');
+    getLatLon(cityName);
+    searchHistory.forEach(city => createRecentCityElement(city));
+}
+
 var getCurrentWeather = async (lat, lon) => {
     var apiCwUrl = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&units=imperial&appid=e84e3fc93397b11b8b9bcf4e0a959017";
     var response = await fetch(apiCwUrl);
@@ -105,49 +117,66 @@ var createCardElement = (forecast) => {
     return card;
 }
 
-var createRecentCityElement = () => {
+var createRecentCityElement = (cityName) => {
+    for (let child of recentCities.children) {
+        console.log(child.innerHTML);
+        if (child.innerHTML.includes(cityName)) {
+            return;
+        }
+    }
     var recentCity = document.createElement('button');
     recentCity.classList.add('recent-city');
-    recentCity.innerHTML = cCityEl.value;
+    recentCity.innerHTML = cityName;
     recentCities.appendChild(recentCity);
 }
 
-var getSearchHistory = function() {
+var getSearchHistory = function(cityName) {
     var history = localStorage.getItem("cityNames");
-    // console.log(typeof history);
-    
+    localStorage.setItem('latestCity', cityName);
     if (!history) {
-        searchHistory.push(cCityEl.value);
+        searchHistory.push(cityName);
         localStorage.setItem("cityNames", searchHistory);
     } else {
-        searchHistory = [history];
-        // console.log(searchHistory);
-        const found = searchHistory.find(element => element == cCityEl.value);
-            if (!found === cCityEl.value) {
-                searchHistory.push(cCityEl.value);
-                localStorage.setItem("cityNames", searchHistory);
-            } else {
-                return;
-            }
-                
-
+        searchHistory = history.split(',');
+        if (searchHistory.includes(cityName)) {
+            return;
+        }
+        searchHistory.push(cityName);
+        console.log(searchHistory);
+        localStorage.setItem("cityNames", searchHistory);
     }
 }
+var isLastCityName = (cityName) => {
+    var latestCityName = localStorage.getItem('latestCity');
+    
+    if (latestCityName === cityName) {
+        return true;
+    }
+    return false;
+}
 
-var displayCurrentWeather = function(e) {
-    e.preventDefault();
-    getSearchHistory();
-    createRecentCityElement();
+var displayCurrentWeather = function(event) {
+    event.preventDefault();
+    if (!cCityEl.value) {
+        return;
+    }
+    if (isLastCityName(cCityEl.value)) {
+        return;
+    };
+    getSearchHistory(cCityEl.value);
+    createRecentCityElement(cCityEl.value);
 
     getLatLon(cCityEl.value);
 
 }
 
-// var displayRecentCityWeather = function(e) {
-//     e.preventDefault();
-//     getLatLon();
-
-// }
+var displayRecentCityWeather = function(event) {
+    var savedSearch = event.target.innerHTML;
+    console.log(savedSearch);
+    getLatLon(savedSearch);
+    localStorage.setItem('latestCity', savedSearch)
+}
 
 submitBtn.addEventListener('click', displayCurrentWeather);
-// recentCityBtn.addEventListener('click', displayRecentCityWeather);
+recentCities.addEventListener('click', displayRecentCityWeather);
+onRefresh();
